@@ -82,3 +82,46 @@ def scatter_2d_hyperplane(data,
         np.max(data[:, dim_2]) + epsilon
     ])
     return ax
+
+
+def plot_intervals(ranges, figure=None, axes=None):
+    """
+    Plot a visualization of relevance intervals.
+    """
+    # Setup figure and axes.
+    ax = handle_axes(figure, axes)
+
+    # Prepare intervals.
+    n_intervals = len(ranges)
+    index = np.arange(n_intervals) + 1
+    upper_vals = ranges[:, 1]
+    lower_vals = ranges[:, 0]
+
+    # Prepare colors.
+    colors = np.asarray(sns.color_palette("Set2", n_intervals))
+
+    # Plot lower bounds.
+    ax.bar(
+        index,
+        lower_vals,
+        tick_label=index,
+        align="center",
+        linewidth=1.3,
+        color=colors * 0.66)
+
+    # Plot upper bounds by stacking them on top of the lower bounds.
+    ax.bar(
+        index,
+        upper_vals - lower_vals,
+        bottom=lower_vals,
+        tick_label=index,
+        align="center",
+        linewidth=1.3,
+        color=colors)
+
+    # Annotate plot.
+    plt.ylabel('relevance', fontsize=19)
+    plt.xlabel('feature', fontsize=19)
+
+    # Return axes.
+    return ax
