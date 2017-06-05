@@ -153,27 +153,15 @@ def find_relevances(X, y, hyp, offset, slack, C, options=None):
         [d, 2 * d])  # The normal vector, a min and max one for each dim
     bs = np.zeros(2 * d)  # The offsets
     xps = np.zeros(2 * d)  # The extreme results
-    print('Original weight vector L1 is {} and slack variable sum is {}.'.
-          format(L1, svmloss))
     for i in range(d):
         omega, b, eps, xp = find_min_relevance(X, y, i, hyp, offset, slack, C,
                                                options)
         omegas[:, 2 * i] = np.asarray(omega).reshape((d, ))
         bs[2 * i] = b
         xps[2 * i] = xp
-        print(
-            'Found min weight {} for feature {} in vector with L1-norm {}. Slack sum is {}.'.
-            format(xp, i,
-                   np.linalg.norm(np.asarray(omega), 1),
-                   np.sum(np.abs(np.asarray(eps)))))
         omega, b, eps, xp = find_max_relevance(X, y, i, hyp, offset, slack, C,
                                                options)
         omegas[:, 2 * i + 1] = np.asarray(omega).reshape((d, ))
         bs[2 * i + 1] = b
         xps[2 * i + 1] = xp
-        print(
-            'Found max weight {} for feature {} in vector with L1-norm {}. Slack sum is {}.'.
-            format(xp, i,
-                   np.linalg.norm(np.asarray(omega), 1),
-                   np.sum(np.abs(np.asarray(eps)))))
     return omegas, xps, bs
