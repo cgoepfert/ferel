@@ -129,6 +129,21 @@ def find_max_relevance(X, y, i, hyp, offset, slack, C, options=None):
         return omega_pos, b_pos, eps_pos, xp_pos
 
 
+def find_shadow_relevances(X, y, hyp, offset, slack, C, options=None):
+    L1 = np.linalg.norm(hyp, 1)
+    svmloss = np.sum(np.abs(slack))
+    (n, d) = X.shape
+    # Initialize arrays for optimization results.
+    xps = np.zeros(2 * d)  # The extreme results
+    for i in range(d):
+        X_shadow = np.append(X, X[np.random.permutation(n), i].reshape((n,1)), axis=1)
+        xp = find_min_relevance(X_shadow, y, d, hyp, offset, slack, C, options)[3]
+        xps[2 * i] = xp
+        xp = find_max_relevance(X_shadow, y, d, hyp, offset, slack, C, options)[3]
+        xps[2 * i + 1] = xp
+    return xps
+
+
 def find_relevances(X, y, hyp, offset, slack, C, options=None):
     L1 = np.linalg.norm(hyp, 1)
     svmloss = np.sum(np.abs(slack))
