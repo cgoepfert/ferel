@@ -79,7 +79,7 @@ def scatter_2d_hyperplane(data,
     return ax
 
 
-def plot_intervals(ranges, figure=None, axes=None):
+def plot_intervals(ranges, weights=None, labels=None, figure=None, axes=None):
     """
     Plot a visualization of relevance intervals.
     """
@@ -92,31 +92,38 @@ def plot_intervals(ranges, figure=None, axes=None):
     upper_vals = ranges[:, 1]
     lower_vals = ranges[:, 0]
 
-    # Prepare colors.
-    colors = np.asarray(sns.color_palette("Set2", n_intervals))
-
     # Plot lower bounds.
-    ax.bar(
+    lower_bars = ax.bar(
         index,
         lower_vals,
         tick_label=index,
         align="center",
         linewidth=1.3,
-        color=colors * 0.66)
+        label='lower bound')
 
     # Plot upper bounds by stacking them on top of the lower bounds.
-    ax.bar(
+    upper_bars = ax.bar(
         index,
         upper_vals - lower_vals,
         bottom=lower_vals,
         tick_label=index,
         align="center",
         linewidth=1.3,
-        color=colors)
+        label='upper bound')
 
     # Annotate plot.
-    plt.ylabel('relevance', fontsize=19)
-    plt.xlabel('feature', fontsize=19)
+    ax.set_ylabel('relevance')
+    ax.set_xlabel('feature')
+
+    # Scatter weights.
+    if weights is not None:
+        if labels is None:
+            labels = [None for w in weights]
+        for w, l in zip(weights, labels):
+            ax.scatter(index, w, zorder=2, label=l)
+
+    # Draw legend.
+    ax.legend()
 
     # Return axes.
     return ax
