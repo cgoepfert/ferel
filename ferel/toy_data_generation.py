@@ -158,8 +158,6 @@ def add_label_noise_uniform(y, p, random_state=None):
 
     swap = random_state.rand(len(y)) < p
     noisy = np.copy(y)
-    print('Swapping {} 1 to -1 and {} -1 to 1.'.format(
-        np.count_nonzero(y[swap] == 1), np.count_nonzero(y[swap] == -1)))
     noisy[swap] = -1 * y[swap]
     return noisy
 
@@ -172,8 +170,6 @@ def add_label_noise_border(X, y, normal_vector, b, p, random_state=None):
 
     swap = random_state.rand(len(y)) * y * (np.dot(X, normal_vector) - b) < p
     noisy = np.copy(y)
-    print('Swapping {} 1 to -1 and {} -1 to 1.'.format(
-        np.count_nonzero(y[swap] == 1), np.count_nonzero(y[swap] == -1)))
     noisy[swap] = -1 * y[swap]
     return noisy
 
