@@ -175,10 +175,10 @@ def add_label_noise_border(X, y, normal_vector, b, p, random_state=None):
 
 
 def add_data_noise_gaussian(X, stdev, random_state=None):
-    """ Add random gaussian noise with mean 0 and std stdev to data X and return X. """
+    """ Add random gaussian noise with mean 0 and standard deviation stdev to data X and return X. """
 
     # Check random state.
     random_state = sklearn.utils.check_random_state(random_state)
 
-    X = X + stdev * random_state.randn(X.shape())
-    return X
+    noisy = X + stdev * random_state.randn(X.shape())
+    return noisy
