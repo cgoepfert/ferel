@@ -3,12 +3,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import matplotlib
 
-font = {'family': 'normal', 'weight': 'bold', 'size': 20}
-
-matplotlib.rc('font', **font)
-bmap = sns.color_palette("Set2", 5)
-sns.set(style='ticks', palette='Set2')
-sns.despine()
+sns.set(style='whitegrid')
 
 
 def handle_axes(figure=None, axes=None):
@@ -17,7 +12,7 @@ def handle_axes(figure=None, axes=None):
     """
     if axes is None:
         if figure is None:
-            figure = plt.figure()
+            figure = plt.figure(figsize=[6, 6])
         axes = figure.add_subplot(1, 1, 1)
     return axes
 
@@ -33,19 +28,9 @@ def scatter_2d_hyperplane(data,
     """
     Plot a 2-dimensional representation of data together with a hyperplane.
     """
-    # sns stuff, not sure where to appropriately put it.
-    sns.set(
-        context='notebook',
-        style='white',
-        palette=sns.color_palette("BrBG", 7),
-        font='sans-serif',
-        font_scale=1,
-        color_codes=False,
-        rc=None)
-    current_palette = sns.color_palette()
 
     # Determine bounding x coordinates for the hyperplane.
-    x = np.array([np.min(data[:, dim_1]), np.max(data[:, dim_1])])
+    x = np.array([np.min(data[:, dim_1]), np.max(data[:, dim_1])]) * 1.1
 
     # Make sure the second normal vector entry is not zero for easy plotting.
     if abs(normal[dim_2]) < 1e-4:
@@ -59,32 +44,42 @@ def scatter_2d_hyperplane(data,
 
     # Set colors according to margin intrusions.
     xis = np.maximum(0, 1 - labels * (np.dot(data, normal) - bias))
-    colors = np.zeros(labels.size)
-    colors[labels == -1] = 4
-    colors[np.logical_and(labels == -1, xis > 0)] = 5
-    colors[np.logical_and(labels == -1, xis > 1)] = 6
-    colors[labels == 1] = 2
-    colors[np.logical_and(labels == 1, xis > 0)] = 1
-    colors[np.logical_and(labels == 1, xis > 1)] = 0
+    color_index = np.zeros(labels.size)
+    color_index[labels == -1] = 4
+    color_index[np.logical_and(labels == -1, xis > 0)] = 5
+    color_index[np.logical_and(labels == -1, xis > 1)] = 6
+    color_index[labels == 1] = 2
+    color_index[np.logical_and(labels == 1, xis > 0)] = 1
+    color_index[np.logical_and(labels == 1, xis > 1)] = 0
+    current_palette = sns.color_palette("PuOr", 7)
+    colors = np.asarray(current_palette)[color_index.astype(int)]
+
+    # Get axes to plot to.
     ax = handle_axes(figure, axes)
-    ax.scatter(
-        data[:, dim_1],
-        data[:, dim_2],
-        c=np.asarray(current_palette)[colors.astype(int)])
-    ax.plot(x, hyperplane)
-    ax.plot(x, margin_left)
-    ax.plot(x, margin_right)
+
+    # Scatter data.
+    ax.scatter(data[:, dim_1], data[:, dim_2], c=colors)
+
+    # Draw hyperplane and margin.
+    ax.plot(x, hyperplane, c='grey')
+    ax.plot(x, margin_left, c=current_palette[0])
+    ax.plot(x, margin_right, c=current_palette[6])
+
+    # Zoom in on the data so that it fills the plot but with equal axis.
     epsilon = 0.1
-    ax.axis([
-        np.min(data[:, dim_1]) - epsilon,
-        np.max(data[:, dim_1]) + epsilon,
-        np.min(data[:, dim_2]) - epsilon,
-        np.max(data[:, dim_2]) + epsilon
-    ])
+    x_min = np.min(data[:, dim_1]) - epsilon
+    x_max = np.max(data[:, dim_1]) + epsilon
+    y_min = np.min(data[:, dim_2]) - epsilon
+    y_max = np.max(data[:, dim_2]) + epsilon
+    xy_min = max(x_min, y_min)
+    xy_max = min(x_max, y_max)
+    ax.axis([xy_min, xy_max, xy_min, xy_max])  # This may not show all data.
+
+    # Return axes.
     return ax
 
 
-def plot_intervals(ranges, figure=None, axes=None):
+def plot_intervals(ranges, weights=None, labels=None, figure=None, axes=None):
     """
     Plot a visualization of relevance intervals.
     """
@@ -97,31 +92,38 @@ def plot_intervals(ranges, figure=None, axes=None):
     upper_vals = ranges[:, 1]
     lower_vals = ranges[:, 0]
 
-    # Prepare colors.
-    colors = np.asarray(sns.color_palette("Set2", n_intervals))
-
     # Plot lower bounds.
-    ax.bar(
+    lower_bars = ax.bar(
         index,
         lower_vals,
         tick_label=index,
         align="center",
         linewidth=1.3,
-        color=colors * 0.66)
+        label='lower bound')
 
     # Plot upper bounds by stacking them on top of the lower bounds.
-    ax.bar(
+    upper_bars = ax.bar(
         index,
         upper_vals - lower_vals,
         bottom=lower_vals,
         tick_label=index,
         align="center",
         linewidth=1.3,
-        color=colors)
+        label='upper bound')
 
     # Annotate plot.
-    plt.ylabel('relevance', fontsize=19)
-    plt.xlabel('feature', fontsize=19)
+    ax.set_ylabel('relevance')
+    ax.set_xlabel('feature')
+
+    # Scatter weights.
+    if weights is not None:
+        if labels is None:
+            labels = [None for w in weights]
+        for w, l in zip(weights, labels):
+            ax.scatter(index, w, zorder=2, label=l)
+
+    # Draw legend.
+    ax.legend()
 
     # Return axes.
     return ax
