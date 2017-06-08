@@ -58,6 +58,13 @@ def find_min_relevance(X, y, i, hyp, offset, slack, C, options=None):
 
     problem_min = cvx.Problem(objective_min, constraints_min)
     problem_min.solve()
+
+    # Ensure that the problem was solved properly.
+    if problem_min.status != cvx.OPTIMAL:
+        raise RuntimeError(
+            'Minimization problem for feature {} not properly solved. Status: {}'.
+            format(i, problem_min.status))
+
     return omega.value, b.value, eps.value, xp.value
 
 
@@ -86,6 +93,13 @@ def find_max_relevance_pos(X, y, i, hyp, offset, slack, C, options=None):
 
     problem_max_pos = cvx.Problem(objective_max, constraints_max_pos)
     problem_max_pos.solve()
+
+    # Ensure that the problem was solved properly.
+    if problem_max_pos.status != cvx.OPTIMAL:
+        raise RuntimeError(
+            'Positive maximization problem for feature {} not properly solved. Status: {}'.
+            format(i, problem_max_pos.status))
+
     return omega.value, b.value, eps.value, xp.value
 
 
@@ -114,6 +128,13 @@ def find_max_relevance_neg(X, y, i, hyp, offset, slack, C, options=None):
 
     problem_max_neg = cvx.Problem(objective_max, constraints_max_neg)
     problem_max_neg.solve()
+
+    # Ensure that the problem was solved properly.
+    if problem_max_neg.status != cvx.OPTIMAL:
+        raise RuntimeError(
+            'Negative maximization problem for feature {} not properly solved. Status: {}'.
+            format(i, problem_max_neg.status))
+
     return omega.value, b.value, eps.value, xp.value
 
 
