@@ -158,8 +158,6 @@ def add_label_noise_uniform(y, p, random_state=None):
 
     swap = random_state.rand(len(y)) < p
     noisy = np.copy(y)
-    print('Swapping {} 1 to -1 and {} -1 to 1.'.format(
-        np.count_nonzero(y[swap] == 1), np.count_nonzero(y[swap] == -1)))
     noisy[swap] = -1 * y[swap]
     return noisy
 
@@ -172,17 +170,15 @@ def add_label_noise_border(X, y, normal_vector, b, p, random_state=None):
 
     swap = random_state.rand(len(y)) * y * (np.dot(X, normal_vector) - b) < p
     noisy = np.copy(y)
-    print('Swapping {} 1 to -1 and {} -1 to 1.'.format(
-        np.count_nonzero(y[swap] == 1), np.count_nonzero(y[swap] == -1)))
     noisy[swap] = -1 * y[swap]
     return noisy
 
 
 def add_data_noise_gaussian(X, stdev, random_state=None):
-    """ Add random gaussian noise with mean 0 and std stdev to data X and return X. """
+    """ Add random gaussian noise with mean 0 and standard deviation stdev to data X and return X. """
 
     # Check random state.
     random_state = sklearn.utils.check_random_state(random_state)
 
-    X = X + stdev * random_state.randn(X.shape())
-    return X
+    noisy = X + stdev * random_state.randn(X.shape())
+    return noisy
