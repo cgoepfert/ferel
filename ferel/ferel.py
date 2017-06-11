@@ -32,6 +32,36 @@ def find_hyp_ridge(X, y, C=None, hinge_option='hinge'):
     return hyp, offset, slack, acc, C
 
 
+def find_hyp_l1(X, y, C=None, hinge_option='hinge'):
+    """
+    Determine a separating hyperplane using L1-regularization
+    """
+    # If no regularization parameter is given, perform a grid search.
+    if C is None:
+        Cs = [0.001, 0.01, 0.1, 1, 10]
+        param_grid = {'C': Cs}
+        n_folds = 10
+        grid_search = GridSearchCV(
+            svm.LinearSVC(penalty='l1', loss=hinge_option),
+            param_grid,
+            cv=n_folds)
+        grid_search.fit(X, y)
+        clf = grid_search.best_estimator_
+        C = grid_search.best_params_['C']
+
+    # If a regularization parameter is given, use it.
+    else:
+        clf = svm.LinearSVC(penalty='l1', C=C, loss=hinge_option)
+        clf.fit(X, y)
+
+    # Prepare and return the results.
+    hyp = np.ndarray.flatten(clf.coef_.T)
+    offset = -clf.intercept_
+    slack = np.maximum(0, 1 - y * (np.dot(X, hyp) - offset))
+    acc = clf.score(X, y)
+    return hyp, offset, slack, acc, C
+
+
 def find_min_relevance(X, y, i, hyp, offset, slack, C, options=None):
     (n, d) = X.shape
     # Calculate constraint values from the original seperating hyperplane.
@@ -136,10 +166,13 @@ def find_shadow_relevances(X, y, hyp, offset, slack, C, options=None):
     # Initialize arrays for optimization results.
     xps = np.zeros(2 * d)  # The extreme results
     for i in range(d):
-        X_shadow = np.append(X, X[np.random.permutation(n), i].reshape((n,1)), axis=1)
-        xp = find_min_relevance(X_shadow, y, d, hyp, offset, slack, C, options)[3]
+        X_shadow = np.append(
+            X, X[np.random.permutation(n), i].reshape((n, 1)), axis=1)
+        xp = find_min_relevance(X_shadow, y, d, hyp, offset, slack, C,
+                                options)[3]
         xps[2 * i] = xp
-        xp = find_max_relevance(X_shadow, y, d, hyp, offset, slack, C, options)[3]
+        xp = find_max_relevance(X_shadow, y, d, hyp, offset, slack, C,
+                                options)[3]
         xps[2 * i + 1] = xp
     return xps
 
