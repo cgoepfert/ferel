@@ -4,7 +4,7 @@ import cvxpy as cvx
 import numpy as np
 
 
-def find_hyp_ridge(X, y, C=None, hinge_option='hinge'):
+def find_hyp_ridge(X, y, C=None, hinge_option='hinge', random_state=None):
     """
     Determine a separating hyperplane using L2-regularization
     """
@@ -14,14 +14,14 @@ def find_hyp_ridge(X, y, C=None, hinge_option='hinge'):
         param_grid = {'C': Cs}
         n_folds = 10
         grid_search = GridSearchCV(
-            svm.LinearSVC(loss=hinge_option), param_grid, cv=n_folds)
+            svm.LinearSVC(loss=hinge_option, random_state=random_state), param_grid, cv=n_folds)
         grid_search.fit(X, y)
         clf = grid_search.best_estimator_
         C = grid_search.best_params_['C']
 
     # If a regularization parameter is given, use it.
     else:
-        clf = svm.LinearSVC(C=C, loss=hinge_option)
+        clf = svm.LinearSVC(C=C, loss=hinge_option, random_state=random_state)
         clf.fit(X, y)
 
     # Prepare and return the results.
@@ -32,7 +32,7 @@ def find_hyp_ridge(X, y, C=None, hinge_option='hinge'):
     return hyp, offset, slack, acc, C
 
 
-def find_hyp_l1(X, y, C=None, hinge_option='hinge'):
+def find_hyp_l1(X, y, C=None, hinge_option='squared_hinge', random_state=None):
     """
     Determine a separating hyperplane using L1-regularization
     """
@@ -42,7 +42,7 @@ def find_hyp_l1(X, y, C=None, hinge_option='hinge'):
         param_grid = {'C': Cs}
         n_folds = 10
         grid_search = GridSearchCV(
-            svm.LinearSVC(penalty='l1', loss=hinge_option),
+            svm.LinearSVC(penalty='l1', loss=hinge_option, dual=False, random_state=random_state),
             param_grid,
             cv=n_folds)
         grid_search.fit(X, y)
@@ -51,7 +51,7 @@ def find_hyp_l1(X, y, C=None, hinge_option='hinge'):
 
     # If a regularization parameter is given, use it.
     else:
-        clf = svm.LinearSVC(penalty='l1', C=C, loss=hinge_option)
+        clf = svm.LinearSVC(penalty='l1', C=C, loss=hinge_option, dual=False, random_state=random_state)
         clf.fit(X, y)
 
     # Prepare and return the results.
