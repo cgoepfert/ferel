@@ -2,6 +2,7 @@ from sklearn import svm
 from sklearn.model_selection import GridSearchCV
 import cvxpy as cvx
 import numpy as np
+import sklearn.utils
 
 
 def find_hyp_ridge(X, y, C=None, hinge_option='hinge', random_state=None):
@@ -159,15 +160,16 @@ def find_max_relevance(X, y, i, hyp, offset, slack, C, options=None):
         return omega_pos, b_pos, eps_pos, xp_pos
 
 
-def find_shadow_relevances(X, y, hyp, offset, slack, C, options=None):
+def find_shadow_relevances(X, y, hyp, offset, slack, C, random_state=None, options=None):
     L1 = np.linalg.norm(hyp, 1)
     svmloss = np.sum(np.abs(slack))
     (n, d) = X.shape
+    random_state = sklearn.utils.check_random_state(random_state)
     # Initialize arrays for optimization results.
     xps = np.zeros(d)  # The extreme results
     for i in range(d):
         X_shadow = np.append(
-            X, X[np.random.permutation(n), i].reshape((n, 1)), axis=1)
+            X, X[random_state.permutation(n), i].reshape((n, 1)), axis=1)
         xp = find_max_relevance(X_shadow, y, d, hyp, offset, slack, C,
                                 options)[3]
         xps[i] = xp
