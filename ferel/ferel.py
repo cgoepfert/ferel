@@ -4,7 +4,6 @@ import cvxpy as cvx
 import numpy as np
 import sklearn.utils
 
-
 def find_hyp_ridge(X, y, C=None, hinge_option='hinge', random_state=None):
     """
     Determine a separating hyperplane using L2-regularization
@@ -33,34 +32,32 @@ def find_hyp_ridge(X, y, C=None, hinge_option='hinge', random_state=None):
     return hyp, offset, slack, acc, C
 
 
-def find_hyp_l1(X, y, C=None, hinge_option='squared_hinge', random_state=None):
+def find_hyp_l1(X, y, C, random_state=None):
     """
     Determine a separating hyperplane using L1-regularization
     """
-    # If no regularization parameter is given, perform a grid search.
-    if C is None:
-        Cs = [0.001, 0.01, 0.1, 1, 10]
-        param_grid = {'C': Cs}
-        n_folds = 10
-        grid_search = GridSearchCV(
-            svm.LinearSVC(penalty='l1', loss=hinge_option, dual=False, random_state=random_state),
-            param_grid,
-            cv=n_folds)
-        grid_search.fit(X, y)
-        clf = grid_search.best_estimator_
-        C = grid_search.best_params_['C']
+    # Prepare variables.
+    (n, d) = X.shape
+    w = cvx.Variable(d)
+    xi = cvx.Variable(n)
+    b = cvx.Variable()
+    
+    # Prepare problem.
+    objective = cvx.Minimize(cvx.norm(w, 1) + C * cvx.sum_entries(xi))
+    constraints = [
+        cvx.mul_elemwise(y.T, X * w - b) >= 1 - xi,
+        xi >= 0
+    ]
+    # Solve problem.
+    problem = cvx.Problem(objective, constraints)
+    problem.solve()
+    
+    # Prepare output and convert from matrices to flattened arrays.
+    hyp = np.asarray(w.value).flatten()
+    offset = b.value
+    slack = np.asarray(xi.value).flatten()
+    return hyp, offset, slack, C
 
-    # If a regularization parameter is given, use it.
-    else:
-        clf = svm.LinearSVC(penalty='l1', C=C, loss=hinge_option, dual=False, random_state=random_state)
-        clf.fit(X, y)
-
-    # Prepare and return the results.
-    hyp = np.ndarray.flatten(clf.coef_.T)
-    offset = -clf.intercept_
-    slack = np.maximum(0, 1 - y * (np.dot(X, hyp) - offset))
-    acc = clf.score(X, y)
-    return hyp, offset, slack, acc, C
 
 
 def find_min_relevance(X, y, i, hyp, offset, slack, C, options=None):
