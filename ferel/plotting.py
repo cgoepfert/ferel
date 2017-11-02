@@ -92,6 +92,8 @@ def plot_intervals(ranges, weights=None, labels=None, figure=None, axes=None):
     upper_vals = ranges[:, 1]
     lower_vals = ranges[:, 0]
 
+    pal = sns.color_palette()
+
     # Plot lower bounds.
     lower_bars = ax.bar(
         index,
@@ -99,7 +101,8 @@ def plot_intervals(ranges, weights=None, labels=None, figure=None, axes=None):
         tick_label=index,
         align="center",
         linewidth=1.3,
-        label='lower bound')
+        label='lower bound',
+        color=pal[0])
 
     # Plot upper bounds by stacking them on top of the lower bounds.
     upper_bars = ax.bar(
@@ -109,7 +112,8 @@ def plot_intervals(ranges, weights=None, labels=None, figure=None, axes=None):
         tick_label=index,
         align="center",
         linewidth=1.3,
-        label='upper bound')
+        label='upper bound',
+        color=pal[1])
 
     # Annotate plot.
     ax.set_ylabel('relevance')

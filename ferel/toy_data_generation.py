@@ -180,5 +180,5 @@ def add_data_noise_gaussian(X, stdev, random_state=None):
     # Check random state.
     random_state = sklearn.utils.check_random_state(random_state)
 
-    noisy = X + stdev * random_state.randn(X.shape())
+    noisy = X + stdev * random_state.randn(X.shape[0], X.shape[1])
     return noisy

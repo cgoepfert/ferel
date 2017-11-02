@@ -2,9 +2,9 @@ from sklearn import svm
 from sklearn.model_selection import GridSearchCV
 import cvxpy as cvx
 import numpy as np
+import sklearn.utils
 
-
-def find_hyp_ridge(X, y, C=None, hinge_option='hinge'):
+def find_hyp_ridge(X, y, C=None, hinge_option='hinge', random_state=None):
     """
     Determine a separating hyperplane using L2-regularization
     """
@@ -14,14 +14,14 @@ def find_hyp_ridge(X, y, C=None, hinge_option='hinge'):
         param_grid = {'C': Cs}
         n_folds = 10
         grid_search = GridSearchCV(
-            svm.LinearSVC(loss=hinge_option), param_grid, cv=n_folds)
+            svm.LinearSVC(loss=hinge_option, random_state=random_state), param_grid, cv=n_folds)
         grid_search.fit(X, y)
         clf = grid_search.best_estimator_
         C = grid_search.best_params_['C']
 
     # If a regularization parameter is given, use it.
     else:
-        clf = svm.LinearSVC(C=C, loss=hinge_option)
+        clf = svm.LinearSVC(C=C, loss=hinge_option, random_state=random_state)
         clf.fit(X, y)
 
     # Prepare and return the results.
@@ -30,6 +30,34 @@ def find_hyp_ridge(X, y, C=None, hinge_option='hinge'):
     slack = np.maximum(0, 1 - y * (np.dot(X, hyp) - offset))
     acc = clf.score(X, y)
     return hyp, offset, slack, acc, C
+
+
+def find_hyp_l1(X, y, C, random_state=None):
+    """
+    Determine a separating hyperplane using L1-regularization
+    """
+    # Prepare variables.
+    (n, d) = X.shape
+    w = cvx.Variable(d)
+    xi = cvx.Variable(n)
+    b = cvx.Variable()
+    
+    # Prepare problem.
+    objective = cvx.Minimize(cvx.norm(w, 1) + C * cvx.sum_entries(xi))
+    constraints = [
+        cvx.mul_elemwise(y.T, X * w - b) >= 1 - xi,
+        xi >= 0
+    ]
+    # Solve problem.
+    problem = cvx.Problem(objective, constraints)
+    problem.solve()
+    
+    # Prepare output and convert from matrices to flattened arrays.
+    hyp = np.asarray(w.value).flatten()
+    offset = b.value
+    slack = np.asarray(xi.value).flatten()
+    return hyp, offset, slack, C
+
 
 
 def find_min_relevance(X, y, i, hyp, offset, slack, C, options=None):
@@ -150,6 +178,21 @@ def find_max_relevance(X, y, i, hyp, offset, slack, C, options=None):
         return omega_pos, b_pos, eps_pos, xp_pos
 
 
+def find_shadow_relevances(X, y, hyp, offset, slack, C, random_state=None, options=None):
+    L1 = np.linalg.norm(hyp, 1)
+    svmloss = np.sum(np.abs(slack))
+    (n, d) = X.shape
+    random_state = sklearn.utils.check_random_state(random_state)
+    # Initialize arrays for optimization results.
+    xps = np.zeros(d)  # The extreme results
+    for i in range(d):
+        X_shadow = np.append(
+            X, X[random_state.permutation(n), i].reshape((n, 1)), axis=1)
+        xp = find_max_relevance(X_shadow, y, d, hyp, offset, slack, C,
+                                options)[3]
+        xps[i] = xp
+    return xps
+
 def find_relevances(X, y, hyp, offset, slack, C, options=None):
     L1 = np.linalg.norm(hyp, 1)
     svmloss = np.sum(np.abs(slack))
@@ -159,27 +202,15 @@ def find_relevances(X, y, hyp, offset, slack, C, options=None):
         [d, 2 * d])  # The normal vector, a min and max one for each dim
     bs = np.zeros(2 * d)  # The offsets
     xps = np.zeros(2 * d)  # The extreme results
-    print('Original weight vector L1 is {} and slack variable sum is {}.'.
-          format(L1, svmloss))
     for i in range(d):
         omega, b, eps, xp = find_min_relevance(X, y, i, hyp, offset, slack, C,
                                                options)
         omegas[:, 2 * i] = np.asarray(omega).reshape((d, ))
         bs[2 * i] = b
         xps[2 * i] = xp
-        print(
-            'Found min weight {} for feature {} in vector with L1-norm {}. Slack sum is {}.'.
-            format(xp, i,
-                   np.linalg.norm(np.asarray(omega), 1),
-                   np.sum(np.abs(np.asarray(eps)))))
         omega, b, eps, xp = find_max_relevance(X, y, i, hyp, offset, slack, C,
                                                options)
         omegas[:, 2 * i + 1] = np.asarray(omega).reshape((d, ))
         bs[2 * i + 1] = b
         xps[2 * i + 1] = xp
-        print(
-            'Found max weight {} for feature {} in vector with L1-norm {}. Slack sum is {}.'.
-            format(xp, i,
-                   np.linalg.norm(np.asarray(omega), 1),
-                   np.sum(np.abs(np.asarray(eps)))))
     return omegas, xps, bs
