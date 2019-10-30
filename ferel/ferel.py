@@ -50,7 +50,7 @@ def find_hyp_l1(X, y, C, random_state=None):
     ]
     # Solve problem.
     problem = cvx.Problem(objective, constraints)
-    problem.solve()
+    problem.solve(verbose=True)
     
     # Prepare output and convert from matrices to flattened arrays.
     hyp = np.asarray(w.value).flatten()
@@ -85,7 +85,7 @@ def find_min_relevance(X, y, i, hyp, offset, slack, C, options=None):
     ]
 
     problem_min = cvx.Problem(objective_min, constraints_min)
-    problem_min.solve()
+    problem_min.solve(verbose=True)
 
     # Ensure that the problem was solved properly.
     if problem_min.status != cvx.OPTIMAL:
@@ -155,7 +155,7 @@ def find_max_relevance_neg(X, y, i, hyp, offset, slack, C, options=None):
     ]
 
     problem_max_neg = cvx.Problem(objective_max, constraints_max_neg)
-    problem_max_neg.solve()
+    problem_max_neg.solve(verbose=True)
 
     # Ensure that the problem was solved properly.
     if problem_max_neg.status != cvx.OPTIMAL:
