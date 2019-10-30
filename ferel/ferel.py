@@ -43,9 +43,9 @@ def find_hyp_l1(X, y, C, random_state=None):
     b = cvx.Variable()
     
     # Prepare problem.
-    objective = cvx.Minimize(cvx.norm(w, 1) + C * cvx.sum_entries(xi))
+    objective = cvx.Minimize(cvx.norm(w, 1) + C * cvx.sum(xi))
     constraints = [
-        cvx.mul_elemwise(y.T, X * w - b) >= 1 - xi,
+        cvx.multiply(y.T, X * w - b) >= 1 - xi,
         xi >= 0
     ]
     # Solve problem.
@@ -75,11 +75,11 @@ def find_min_relevance(X, y, i, hyp, offset, slack, C, options=None):
     objective_min = cvx.Minimize(xp)
     constraints_min = [
         # Use slack variables.
-        cvx.mul_elemwise(y.T, X * omega - b) >= 1 - eps,
+        cvx.multiply(y.T, X * omega - b) >= 1 - eps,
         eps >= 0,
         # Control L1 norm. and slack.
         cvx.norm(omega, 1) <= L1,
-        cvx.sum_entries(eps) <= svmloss,
+        cvx.sum(eps) <= svmloss,
         # Put the correct bound on objective.
         cvx.abs(omega[i]) <= xp
     ]
@@ -110,11 +110,11 @@ def find_max_relevance_pos(X, y, i, hyp, offset, slack, C, options=None):
     objective_max = cvx.Maximize(xp)
     constraints_max_pos = [
         # Use slack variables.
-        cvx.mul_elemwise(y.T, X * omega - b) >= 1 - eps,
+        cvx.multiply(y.T, X * omega - b) >= 1 - eps,
         eps >= 0,
         # Control L1 norm. and slack.
         cvx.norm(omega, 1) <= L1,
-        cvx.sum_entries(eps) <= svmloss,
+        cvx.sum(eps) <= svmloss,
         # Consider only normal vectors where omega[i] is positive.
         xp <= omega[i]
     ]
@@ -145,11 +145,11 @@ def find_max_relevance_neg(X, y, i, hyp, offset, slack, C, options=None):
     objective_max = cvx.Maximize(xp)
     constraints_max_neg = [
         # Use slack variables.
-        cvx.mul_elemwise(y.T, X * omega - b) >= 1 - eps,
+        cvx.multiply(y.T, X * omega - b) >= 1 - eps,
         eps >= 0,
         # Control L1 norm. and slack.
         cvx.norm(omega, 1) <= L1,
-        cvx.sum_entries(eps) <= svmloss,
+        cvx.sum(eps) <= svmloss,
         # Consider only normal vectors where omega[i] is negative.
         xp <= -omega[i]
     ]
